@@ -1,0 +1,8 @@
+GCP_PROJECT: "ga-test-project-503ca"
+GCP_ARTIFACT_REPO: "core"
+GCP_IMAGE_NAME: "discord-bot/greenfieldbot"
+GCP_IMAGE_TAG: "latest"
+LOCAL_TAR: "image.tar"
+EXTRACT_DIR: "./image_contents"
+CLAMD_HOST: "127.0.0.1"
+CLAMD_PORT: "3310"
