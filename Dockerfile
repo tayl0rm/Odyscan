@@ -26,14 +26,8 @@ WORKDIR /app
 # Copy the compiled binary from builder stage
 COPY --from=builder /odyscan /odyscan
 
-# Copy configuration files (optional)
-COPY config.yaml /app/config.yaml
-
-# Expose necessary ports (adjust if needed)
-EXPOSE 8080
-
 # Set environment variables for K3s (if needed)
-ENV CONFIG_PATH=/app/config.yaml
+ENV CONFIG_PATH=/app/config/config.yaml
 
 # Run the Go app
 ENTRYPOINT ["/odyscan"]
