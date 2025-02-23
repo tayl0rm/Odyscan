@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go app (static binary)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /odyscan ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /odyscan ./main.go
 
 # 🏗️ Stage 2: Create a minimal runtime image
 FROM alpine:latest
