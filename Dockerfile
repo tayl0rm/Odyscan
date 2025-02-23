@@ -5,7 +5,8 @@ FROM golang:1.21 AS builder
 WORKDIR /app
 
 # Copy go.mod and go.sum, then download dependencies
-COPY odyscan/go.mod go.sum ./
+COPY odyscan/go.mod ./
+COPY odyscan/go.sum ./
 RUN go mod download
 
 # Copy the source code
