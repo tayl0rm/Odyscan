@@ -1,34 +1,27 @@
-# 🚀 Stage 1: Build the Go binary
-FROM golang:1.23.4 AS builder
+# Build Stage
+FROM golang:1.21 AS builder
 
-# Set the working directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy go.mod and go.sum, then download dependencies
-COPY odyscan/go.mod ./
-COPY odyscan/go.sum ./
+# Copy go.mod and go.sum first (for dependency caching)
+COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the source code
+# Copy source code
 COPY . .
 
-# Build the Go app (static binary)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /odyscan ./main.go
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o odyscan ./cmd/main.go
 
-# 🏗️ Stage 2: Create a minimal runtime image
-FROM alpine:latest
+# Final Image
+FROM gcr.io/distroless/static:latest
 
-# Install necessary dependencies (e.g., ClamAV client if needed)
-RUN apk --no-cache add ca-certificates clamav
+# Set working directory
+WORKDIR /root/
 
-# Set the working directory
-WORKDIR /app
+# Copy the compiled binary from the builder stage
+COPY --from=builder /app/odyscan .
 
-# Copy the compiled binary from builder stage
-COPY --from=builder /odyscan /odyscan
-
-# Set environment variables for K3s (if needed)
-ENV CONFIG_PATH=/app/config/config.yaml
-
-# Run the Go app
-ENTRYPOINT ["/odyscan"]
+# Set entrypoint
+ENTRYPOINT ["/root/odyscan"]
