@@ -2,35 +2,29 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"odyscan/config"
 	"odyscan/scanner"
 )
 
 func main() {
-	// Load configuration
+	// Load config
 	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
-		fmt.Printf("❌ Error loading config: %v\n", err)
-		return
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	fmt.Println("🔹 Pulling image from GCP Artifact Registry...")
-	if err := scanner.PullImageFromArtifactRegistry(cfg); err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-		return
+	// Pull image and extract layers
+	err = scanner.PullImageFromArtifactRegistry(cfg)
+	if err != nil {
+		log.Fatalf("Error: %v", err)
 	}
 
-	fmt.Println("🔹 Extracting image contents...")
-	if err := scanner.ExtractImage(cfg); err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-		return
+	// Scan extracted files with ClamAV
+	err = scanner.ScanWithClamAV(cfg)
+	if err != nil {
+		log.Fatalf("ClamAV scan failed: %v", err)
+	} else {
+		fmt.Println("✅ Malware scan completed successfully!")
 	}
-
-	fmt.Println("🔹 Scanning extracted files with ClamAV...")
-	if err := scanner.ScanWithClamAV(cfg); err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-		return
-	}
-
-	fmt.Println("✅ Scan complete!")
 }
