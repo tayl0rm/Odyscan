@@ -5,14 +5,15 @@ FROM golang:1.21 AS builder
 WORKDIR /app
 
 # Copy go.mod and go.sum first (for dependency caching)
-COPY go.mod go.sum ./
+COPY odyscan/go.mod ./
+COPY odyscan/go.sum ./
 RUN go mod download
 
 # Copy source code
 COPY . .
 
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o odyscan ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o odyscan .odyscan/cmd/main.go
 
 # Final Image
 FROM gcr.io/distroless/static:latest
