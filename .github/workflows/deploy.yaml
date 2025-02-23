@@ -57,7 +57,7 @@ jobs:
       - name: Set Up Kubeconfig
         run: |
           mkdir -p $(dirname $KUBECONFIG_PATH)
-          echo "${{ secrets.KUBECONFIG }}" | base64 --decode > $KUBECONFIG_PATH
+          echo "${{ secrets.KUBECONFIG }}" > $KUBECONFIG_PATH
           chmod 600 $KUBECONFIG_PATH
           export KUBECONFIG=$KUBECONFIG_PATH
 
