@@ -1,28 +1,30 @@
-# Build Stage
 FROM golang:1.23.4 AS builder
 
-# Set working directory inside container
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum first (for dependency caching)
-COPY odyscan/go.mod ./
-COPY odyscan/go.sum ./
+# Copy module files first for efficient caching
+COPY odyscan/go.mod odyscan/go.sum ./
 RUN go mod download
 
-# Copy source code
-COPY . .
+# Copy the rest of the application code
+COPY odyscan/ .
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o odyscan .odyscan/cmd/main.go
+# Build the Go binary (targeting Linux)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o odyscan ./main.go
 
-# Final Image
+# ---- Run Stage (Minimal Image) ----
 FROM gcr.io/distroless/static:latest
 
-# Set working directory
+# Set the working directory inside the final image
 WORKDIR /root/
 
-# Copy the compiled binary from the builder stage
+# Copy the built binary from the builder stage
 COPY --from=builder /app/odyscan .
 
-# Set entrypoint
+# Copy any required static assets if needed
+COPY --from=builder /app/static ./static
+COPY --from=builder /app/templates ./templates
+
+# Define the entrypoint
 ENTRYPOINT ["/root/odyscan"]
