@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig("config/config.yaml")
+	cfg, err := config.LoadConfig("/app/config/config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
@@ -49,5 +49,5 @@ func main() {
 	})
 
 	fmt.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe("127.0.0.1:8080", nil))
 }

@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to My Gin App</title>
+    <title>Odyscan - Image Scanner</title>
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to My Gin Web App</h1>
-        <p>This is a simple welcome page served with Go Gin.</p>
-        <button id="clickMe">Click Me</button>
-        <p id="message"></p>
+        <h1>Odyscan - Image Scanner</h1>
+        <form id="scanForm">
+            <label for="image">Enter Image Name:</label>
+            <input type="text" id="image" name="image" required>
+            <button type="submit">Scan Image</button>
+        </form>
+        <div id="result"></div>
     </div>
-
     <script src="/static/js/app.js"></script>
 </body>
 </html>
