@@ -22,15 +22,7 @@ func PullImageFromArtifactRegistry(cfg *config.Config) error {
 	defer client.Close()
 
 	// Construct the expected image URI correctly based on whether it's a digest or a tag
-	var expectedURI string
-	if strings.Contains(cfg.ImageName, "@sha256:") {
-		// Image is specified by digest
-		expectedURI = fmt.Sprintf("europe-west1-docker.pkg.dev/%s/%s/%s", cfg.ProjectID, cfg.RepoName, cfg.ImageName)
-	} else {
-		// Assume it's a tag
-		expectedURI = fmt.Sprintf("europe-west1-docker.pkg.dev/%s/%s/%s:%s", cfg.ProjectID, cfg.RepoName, cfg.ImageName, cfg.Tag)
-	}
-
+	expectedURI := fmt.Sprintf("europe-west1-docker.pkg.dev/%s/%s/%s", cfg.ProjectID, cfg.RepoName, cfg.ImageName)
 	fmt.Println("🔍 Checking for image in Artifact Registry:", expectedURI)
 
 	// Verify image existence
@@ -65,6 +57,7 @@ func PullImageFromArtifactRegistry(cfg *config.Config) error {
 	fmt.Println("🔄 Attempting to pull image using go-containerregistry (crane)...")
 
 	// Pull and save the image
+	fmt.Println("🚚 image = ", expectedURI)
 	img, err := crane.Pull(expectedURI)
 	if err != nil {
 		return fmt.Errorf("⚠️ failed to pull image with crane: %v", err)
