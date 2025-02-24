@@ -2,52 +2,72 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"html/template"
+	"io"
 	"net/http"
-
 	"odyscan/config"
-	"odyscan/scanner"
+	"odyscan/scanner" // Ensure correct import
+	"path/filepath"
 )
 
 func main() {
-	cfg, err := config.LoadConfig("/app/config/config.yaml")
+
+	http.HandleFunc("/", serveIndex)     // Serve index.html
+	http.HandleFunc("/scan", handleScan) // Handle image scan requests
+
+	fmt.Println("🚀 Server started on port 8080")
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		fmt.Printf("❌ Server failed to start: %v\n", err)
+	}
+}
+
+// Serve index.html
+func serveIndex(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "odyscan/templates/index.html")
-	})
+	tmplPath := filepath.Join("templates", "index.html") // Ensure correct path
+	tmpl, err := template.ParseFiles(tmplPath)
+	if err != nil {
+		http.Error(w, "Failed to load page", http.StatusInternalServerError)
+		return
+	}
+	tmpl.Execute(w, nil)
+}
 
-	http.HandleFunc("/scan", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-			return
-		}
+// Handle scan request
+func handleScan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
 
-		r.ParseForm()
-		imageName := r.FormValue("image")
-		if imageName == "" {
-			http.Error(w, "Image name is required", http.StatusBadRequest)
-			return
-		}
+	imageName := r.FormValue("imageName") // Get image name from user input
+	if imageName == "" {
+		http.Error(w, "Image name is required", http.StatusBadRequest)
+		return
+	}
 
-		cfg.ImageName = imageName // Update config with user input
-		err := scanner.PullImageFromArtifactRegistry(cfg)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to pull image: %v", err), http.StatusInternalServerError)
-			return
-		}
+	// Set image name in config
+	cfg, err := config.LoadConfig("/app/config/config.yaml")
+	if err != nil {
+		fmt.Printf("❌ Error loading config: %v\n", err)
+		return
+	}
+	cfg.ImageName = imageName
 
-		err = scanner.ScanWithClamAV(cfg)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Scan failed: %v", err), http.StatusInternalServerError)
-			return
-		}
+	// Run image pull and scan
+	err = scanner.PullImageFromArtifactRegistry(cfg)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error pulling image: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-		fmt.Fprintln(w, "✅ Scan completed successfully!")
-	})
-
-	fmt.Println("Server started on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Return success response
+	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, "✅ Image pulled and scanned successfully!")
 }

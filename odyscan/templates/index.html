@@ -7,15 +7,16 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Odyscan - Image Scanner</h1>
-        <form id="scanForm">
-            <label for="image">Enter Image Name:</label>
-            <input type="text" id="image" name="image" required>
-            <button type="submit">Scan Image</button>
-        </form>
-        <div id="result"></div>
-    </div>
+    <h1>Odyscan - Artifact Registry Image Scanner</h1>
+    
+    <form id="scanForm">
+        <label for="imageName">Enter Image Name:</label>
+        <input type="text" id="imageName" name="imageName" required>
+        <button type="submit">Scan</button>
+    </form>
+
+    <div id="result"></div>
+
     <script src="/static/js/app.js"></script>
 </body>
 </html>
