@@ -3,69 +3,41 @@ package scanner
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"odyscan/config"
+	"path/filepath"
 
-	artifact "cloud.google.com/go/artifactregistry/apiv1"
-	artifactpb "cloud.google.com/go/artifactregistry/apiv1/artifactregistrypb"
+	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
 )
 
-// PullImageFromArtifactRegistry fetches an image from Artifact Registry based on user input.
+// PullImageFromArtifactRegistry pulls an image using crane with authentication
 func PullImageFromArtifactRegistry(cfg *config.Config) error {
 	ctx := context.Background()
-	client, err := artifact.NewClient(ctx)
+	client, err := artifactregistry.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("❌ failed to create Artifact Registry client: %v", err)
+		return fmt.Errorf("failed to create artifact registry client: %v", err)
 	}
 	defer client.Close()
 
-	// Construct the expected image URI correctly based on whether it's a digest or a tag
-	expectedURI := fmt.Sprintf("europe-west1-docker.pkg.dev/%s/%s/%s", cfg.ProjectID, cfg.RepoName, cfg.ImageName)
-	fmt.Println("🔍 Checking for image in Artifact Registry:", expectedURI)
-
-	// Verify image existence
-	req := &artifactpb.ListDockerImagesRequest{
-		Parent: fmt.Sprintf("projects/%s/locations/europe-west1/repositories/%s", cfg.ProjectID, cfg.RepoName),
-	}
-
-	it := client.ListDockerImages(ctx, req)
-	imageFound := false
-
-	for {
-		resp, err := it.Next()
-		if err != nil {
-			break // No more images in the list
-		}
-		if strings.Contains(resp.Uri, expectedURI) {
-			imageFound = true
-			break
-		}
-	}
-
-	if !imageFound {
-		return fmt.Errorf("❌ image %s not found in Artifact Registry", expectedURI)
-	}
-
-	fmt.Printf("✅ Found image: %s\n", expectedURI)
-
-	// Define local tar path
-	localTarPath := fmt.Sprintf("/tmp/%s.tar", cfg.ImageName)
+	imageURI := fmt.Sprintf("europe-west1-docker.pkg.dev/%s/%s/%s", cfg.ProjectID, cfg.RepoName, cfg.ImageName)
+	localTarPath := filepath.Join("/tmp", fmt.Sprintf("%s.tar", cfg.ImageName))
 	cfg.LocalTar = localTarPath
 
-	fmt.Println("🔄 Attempting to pull image using go-containerregistry (crane)...")
+	// Ensure authentication
+	fmt.Println("🔄 Authenticating with Artifact Registry...")
+	craneOpts := crane.WithAuthFromKeychain(authn.DefaultKeychain)
 
-	// Pull and save the image
-	fmt.Println("🚚 image = ", expectedURI)
-	img, err := crane.Pull(expectedURI)
+	// Pull the image
+	fmt.Printf("🔄 Pulling image: %s\n", imageURI)
+	img, err := crane.Pull(imageURI, craneOpts)
 	if err != nil {
-		return fmt.Errorf("⚠️ failed to pull image with crane: %v", err)
+		return fmt.Errorf("failed to pull image: %v", err)
 	}
 
-	err = crane.Save(img, expectedURI, localTarPath)
-	if err != nil {
-		return fmt.Errorf("❌ failed to save image using crane: %v", err)
+	// Save the pulled image as a tar file
+	if err := crane.Save(img, imageURI, localTarPath); err != nil {
+		return fmt.Errorf("failed to save image: %v", err)
 	}
 
 	fmt.Printf("✅ Image pulled and saved to %s\n", localTarPath)
