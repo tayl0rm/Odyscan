@@ -10,9 +10,14 @@ import (
 	"github.com/dutchcoders/go-clamd"
 )
 
-// ScanWithClamAV scans the extracted files using ClamAV running in the same K3s cluster
+// ScanWithClamAV scans extracted files using ClamAV running in another namespace
 func ScanWithClamAV(cfg *config.Config) error {
-	clam := clamd.NewClamd(fmt.Sprintf("%s:%s", cfg.ClamdHost, cfg.ClamdPort))
+	// Construct ClamAV service address using namespace
+	clamavService := fmt.Sprintf("tcp://clamd.%s.svc.cluster.local:%s", cfg.ClamdNamespace, cfg.ClamdPort)
+	clam := clamd.NewClamd(clamavService)
+
+	fmt.Printf("🔍 Connecting to ClamAV at %s\n", clamavService)
+
 	files, err := os.ReadDir(cfg.ExtractDir)
 	if err != nil {
 		return err
