@@ -6,12 +6,11 @@ import (
 	"io"
 	"net/http"
 	"odyscan/config"
-	"odyscan/scanner" // Ensure correct import
+	"odyscan/scanner"
 	"path/filepath"
 )
 
 func main() {
-
 	http.HandleFunc("/", serveIndex)     // Serve index.html
 	http.HandleFunc("/scan", handleScan) // Handle image scan requests
 
@@ -52,22 +51,38 @@ func handleScan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set image name in config
+	// Load config
 	cfg, err := config.LoadConfig("/app/config/config.yaml")
 	if err != nil {
-		fmt.Printf("❌ Error loading config: %v\n", err)
+		http.Error(w, fmt.Sprintf("Error loading config: %v", err), http.StatusInternalServerError)
 		return
 	}
 	cfg.ImageName = imageName
+	cfg.LocalTar = fmt.Sprintf("/tmp/%s.tar", imageName)
+	cfg.ExtractDir = fmt.Sprintf("/tmp/%s_extracted", imageName)
 
-	// Run image pull and scan
+	// Pull image
 	err = scanner.PullImageFromArtifactRegistry(cfg)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error pulling image: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Extract image
+	err = scanner.ExtractImage(cfg)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error extracting image: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Scan extracted files with ClamAV
+	err = scanner.ScanWithClamAV(cfg)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error scanning image: %v", err), http.StatusInternalServerError)
+		return
+	}
+
 	// Return success response
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, "✅ Image pulled and scanned successfully!")
+	io.WriteString(w, "✅ Image pulled, extracted, and scanned successfully!")
 }
