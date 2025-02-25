@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	artifactregistry "cloud.google.com/go/artifactregistry/apiv1"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/crane"
+	"github.com/google/go-containerregistry/pkg/v1/google"
 )
 
 // PullImageFromArtifactRegistry pulls an image using crane with authentication
@@ -25,8 +25,9 @@ func PullImageFromArtifactRegistry(cfg *config.Config) error {
 	cfg.LocalTar = localTarPath
 
 	// Ensure authentication
+	keychain := google.Keychain
 	fmt.Println("🔄 Authenticating with Artifact Registry...")
-	craneOpts := crane.WithAuthFromKeychain(authn.DefaultKeychain)
+	craneOpts := crane.WithAuthFromKeychain(keychain)
 
 	// Pull the image
 	fmt.Printf("🔄 Pulling image: %s\n", imageURI)
