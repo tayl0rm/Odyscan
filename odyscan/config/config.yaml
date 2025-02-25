@@ -4,7 +4,7 @@ GCP_IMAGE_NAME: "discord-bot/bluefieldbot@sha256:9a8471f60b4c651b0a95f92d2f5de35
 GCP_IMAGE_TAG: "latest"
 LOCAL_TAR: "image.tar"
 EXTRACT_DIR: "./image_contents"
-CLAMD_HOST: "127.0.0.1"
-CLAMD_PORT: "3310"
+CLAMD_HOST: "localhost"
+CLAMD_PORT: "80"
 
 # europe-west1-docker.pkg.dev/ga-test-project-503ca/core/discord-bot/bluefieldbot
