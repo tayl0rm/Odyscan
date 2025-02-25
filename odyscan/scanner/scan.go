@@ -13,7 +13,8 @@ import (
 // ScanWithClamAV scans extracted files using ClamAV running in another namespace
 func ScanWithClamAV(cfg *config.Config) error {
 	// Construct ClamAV service address using namespace
-	clamavService := fmt.Sprintf("tcp://clamav-scanner.%s.svc.cluster.local:%s", cfg.ClamdNamespace, cfg.ClamdPort)
+	// clamavService := fmt.Sprintf("tcp://clamav-scanner.%s.svc.cluster.local:%s", cfg.ClamdNamespace, cfg.ClamdPort)
+	clamavService := "tcp://clamav-scanner.clamav.svc.cluster.local:3310"
 	clam := clamd.NewClamd(clamavService)
 
 	fmt.Printf("🔍 Connecting to ClamAV at %s\n", clamavService)
