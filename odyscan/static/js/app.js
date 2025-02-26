@@ -1,64 +1,27 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const scanForm = document.getElementById("scan-form");
-    const imageInput = document.getElementById("imageName");
-    const scanButton = document.getElementById("scan-button");
-    const progressContainer = document.getElementById("progress-container");
-    const progressLog = document.getElementById("progress-log");
+    const form = document.getElementById("scanForm");
+    const resultDiv = document.getElementById("result");
 
-    scanForm.addEventListener("submit", function (event) {
+    form.addEventListener("submit", function (event) {
         event.preventDefault();
-        const imageName = imageInput.value.trim();
+        
+        const imageName = document.getElementById("imageName").value;
         if (!imageName) {
-            alert("Please enter an image name.");
+            resultDiv.innerHTML = `<p style="color: red;">Please enter an image name.</p>`;
             return;
         }
-        
-        scanButton.disabled = true;
-        progressContainer.style.display = "block";
-        progressLog.innerHTML = "";
 
-        // Start scanning process
         fetch("/scan", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: `imageName=${encodeURIComponent(imageName)}`
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Failed to start scan");
-            }
-            return response.text();
-        })
-        .then(() => {
-            listenForProgress();
+        .then(response => response.text())
+        .then(data => {
+            resultDiv.innerHTML = `<p>${data}</p>`;
         })
         .catch(error => {
-            progressLog.innerHTML += `<p class='error'>Error: ${error.message}</p>`;
-            scanButton.disabled = false;
+            resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
         });
     });
-
-    function listenForProgress() {
-        const eventSource = new EventSource("/scan/progress");
-
-        eventSource.onmessage = function (event) {
-            const logEntry = document.createElement("p");
-            logEntry.textContent = event.data;
-            progressLog.appendChild(logEntry);
-            progressLog.scrollTop = progressLog.scrollHeight;
-
-            if (event.data.includes("✅")) {
-                eventSource.close();
-                scanButton.disabled = false;
-            }
-        };
-
-        eventSource.onerror = function () {
-            eventSource.close();
-            progressLog.innerHTML += `<p class='error'>Error: Lost connection to server.</p>`;
-            scanButton.disabled = false;
-        };
-    }
 });
