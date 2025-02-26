@@ -2,21 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Odyscan - Image Scanner</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <title>Odyscan</title>
+    <style>
+        /* Progress bar container */
+        #progress-container {
+            width: 100%;
+            background-color: #f3f3f3;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+
+        /* Progress bar */
+        #progress-bar {
+            width: 0%;
+            height: 30px;
+            background-color: #4caf50;
+            text-align: center;
+            line-height: 30px;
+            color: white;
+        }
+    </style>
 </head>
 <body>
-    <h1>Odyscan - Artifact Registry Image Scanner</h1>
-    
-    <form id="scanForm">
-        <label for="imageName">Enter Image Name:</label>
+    <h1>Odyscan Image Scanner</h1>
+    <form id="scan-form">
+        <label for="imageName">Image Name:</label>
         <input type="text" id="imageName" name="imageName" required>
-        <button type="submit">Scan</button>
+        <button type="submit">Scan Image</button>
     </form>
 
-    <div id="result"></div>
+    <!-- Progress bar elements -->
+    <div id="progress-container" style="display: none;">
+        <div id="progress-bar">0%</div>
+    </div>
 
-    <script src="/static/js/app.js"></script>
+    <!-- Status message -->
+    <div id="status-message"></div>
+
+    <script>
+        document.getElementById('scan-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const imageName = document.getElementById('imageName').value;
+            const progressBar = document.getElementById('progress-bar');
+            const progressContainer = document.getElementById('progress-container');
+            const statusMessage = document.getElementById('status-message');
+
+            // Reset progress bar and status message
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            progressContainer.style.display = 'block';
+            statusMessage.textContent = '';
+
+            // Initialize SSE
+            const eventSource = new EventSource('/scan');
+
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                progressBar.style.width = data.progress + '%';
+                progressBar.textContent = data.progress + '%';
+                statusMessage.textContent = data.message;
+
+                if (data.progress === 100) {
+                    eventSource.close();
+                }
+            };
+
+            eventSource.onerror = function() {
+                statusMessage.textContent = 'An error occurred during the scan.';
+                eventSource.close();
+            };
+        });
+    </script>
 </body>
 </html>
